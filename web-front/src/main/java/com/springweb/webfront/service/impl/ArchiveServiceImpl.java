@@ -1,0 +1,69 @@
+package com.springweb.webfront.service.impl;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.common.collect.Lists;
+import com.springweb.webcommon.domain.dos.ArticleDO;
+import com.springweb.webcommon.domain.mapper.ArticleMapper;
+import com.springweb.webcommon.utils.PageResponse;
+import com.springweb.webfront.convert.ArticleConvert;
+import com.springweb.webfront.service.ArchiveService;
+import com.springweb.webfront.vo.archive.FindArchiveArticlePageListReqVO;
+import com.springweb.webfront.vo.archive.FindArchiveArticlePageListRspVO;
+import com.springweb.webfront.vo.archive.FindArchiveArticleRspVO;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import java.time.YearMonth;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import com.springweb.webcommon.utils.Response;
+import com.springweb.webcommon.utils.Response;
+
+
+@Service
+@Slf4j
+public class ArchiveServiceImpl implements ArchiveService {
+
+    @Autowired
+    private ArticleMapper articleMapper;
+
+    /**
+     * 获取文章归档分页数据
+     *
+     * @param findArchiveArticlePageListReqVO
+     * @return
+     */
+    @Override
+    public Response findArchivePageList(FindArchiveArticlePageListReqVO findArchiveArticlePageListReqVO) {
+        Long current = findArchiveArticlePageListReqVO.getCurrent();
+        Long size = findArchiveArticlePageListReqVO.getSize();
+
+        // 分页查询
+        IPage<ArticleDO> page = articleMapper.selectPageList(current, size, null, null, null, null);
+        List<ArticleDO> articleDOS = page.getRecords();
+
+        List<FindArchiveArticlePageListRspVO> vos = Lists.newArrayList();
+        if (!CollectionUtils.isEmpty(articleDOS)) {
+            // DO 转 VO
+            List<FindArchiveArticleRspVO> archiveArticleRspVOS =  articleDOS.stream()
+                    .map(articleDO -> ArticleConvert.INSTANCE.convertDO2ArchiveArticleVO(articleDO))
+                    .collect(Collectors.toList());
+
+            // 按创建的月份进行分组
+            Map<YearMonth, List<FindArchiveArticleRspVO>> map = archiveArticleRspVOS.stream().collect(Collectors.groupingBy(FindArchiveArticleRspVO::getCreateMonth));
+            // 使用 TreeMap 按月份倒序排列
+            Map<YearMonth, List<FindArchiveArticleRspVO>> sortedMap = new TreeMap<>(Collections.reverseOrder());
+            sortedMap.putAll(map);
+
+            // 遍历排序后的 Map，将其转换为归档 VO
+            sortedMap.forEach((k, v) -> vos.add(FindArchiveArticlePageListRspVO.builder().month(k).articles(v).build()));
+        }
+
+        return PageResponse.success(page, vos);
+    }
+}
