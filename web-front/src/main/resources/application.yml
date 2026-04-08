@@ -1,0 +1,23 @@
+spring:
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  mail:
+    host: smtp.qq.com
+    username: 871361652@qq.com
+    password: jihdwyidyvevbbgg
+    default-encoding: utf-8
+    protocol: smtps
+    port: 465
+
+jwt:
+  issuer: admin
+  secret: OTr/XvvT7oK79msK/Pi55u/YD/34E7A/dl+bPitFB44q4/rHTr+NOOnD81mzcP6ao3+53ByRiy9wJn1sh4nnzQ==
+  tokenExpireTime: 1440
+  tokenHeaderKey: Authorization
+  tokenPrefix: Bearer
+
+api-key: xxx
